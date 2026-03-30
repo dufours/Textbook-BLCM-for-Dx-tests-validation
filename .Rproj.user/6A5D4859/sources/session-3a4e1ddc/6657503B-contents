@@ -1,0 +1,11 @@
+# Welcome {.unnumbered}
+
+This website hosts the **first edition** of *Inference Without a Gold Standard: Bayesian Latent Class Models for Diagnostic Test Validation and Prevalence Estimation*.
+
+This book teaches how to use **Bayesian latent class models** to estimate disease prevalence and diagnostic test sensitivity and specificity in the absence of a gold standard test. The methods are introduced conceptually and illustrated through concrete **health sciences examples**, using **R** for implementation.
+
+The datasets used in the exercises, as well as our suggested solutions, are available in my [Github repository](https://github.com/dufours/Dx-LCM-Bookdown).
+
+This online book will always be **freely available**. The text and figures are licensed under the **Creative Commons Attribution 4.0 International License** ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)) to encourage reuse and adaptation with attribution. All accompanying R code is licensed under the [MIT License](https://opensource.org/licenses/MIT) to facilitate open and reproducible research.
+
+For readers who prefer a printed version, a **hard-copy edition is currently in preparation** and will be available soon.

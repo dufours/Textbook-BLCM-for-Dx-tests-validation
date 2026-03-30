@@ -1,7 +1,12 @@
-.Rproj.user
-.Rhistory
-.RData
-.Ruserdata
-
+# Quarto output
+/_book/
+/_site/
 /.quarto/
-**/*.quarto_ipynb
+
+# Pandoc / LaTeX artifacts
+*.tex
+*.log
+*.aux
+*.out
+*.toc
+
