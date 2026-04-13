@@ -1,6 +1,6 @@
 # Preface
 
-Welcome to the first edition of *Inference Without a Gold Standard*. Writing this book was an ambitious undertaking, motivated by a long‑standing challenge in epidemiology and health sciences: how to draw reliable inferences when no perfect diagnostic test exists.
+Welcome to the first edition of *Inference Without a Gold Standard*. Writing this book was motivated by a long‑standing interest in a central challenge in epidemiology and health sciences: how to draw reliable inferences when no perfect diagnostic test exists.
 
 Bayesian statistical methods are now widely used in both human and veterinary epidemiology, and among them, **Bayesian latent class models** have emerged as a particularly powerful framework for estimating disease prevalence and diagnostic test accuracy. These models are especially valuable **in situations where a so‑called *gold standard* test is unavailable**, unreliable, or impractical. Historically, the most commonly used diagnostic test was often treated as if it were a perfect reference when evaluating new tests or estimating prevalence. However, as diagnostic technologies continue to improve, this assumption is increasingly difficult to justify. In many cases, newer tests may be as accurate as—or even more accurate than—the tests used for comparison, leading to biased assessments when discrepancies arise.
 

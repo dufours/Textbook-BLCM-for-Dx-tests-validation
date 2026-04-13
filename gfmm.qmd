@@ -1,0 +1,3 @@
+# Quantitative tests - the Gaussian finite mixture model
+
+TO COMPLETE

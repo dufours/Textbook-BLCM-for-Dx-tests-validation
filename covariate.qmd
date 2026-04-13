@@ -1,0 +1,3 @@
+# Accuracy varying with a covariate
+
+TO COMPLETE

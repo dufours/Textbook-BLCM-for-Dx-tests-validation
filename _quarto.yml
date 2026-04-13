@@ -1,17 +1,18 @@
 project:
   type: book
-  output-dir: _site
+  output-dir: _book
+
 book:
   title: "Inference Without a Gold Standard: Bayesian Latent Class Models for Diagnostic Test Validation and Prevalence Estimation"
   author: "Simon Dufour"
-  cover-image: cover.jpg
+  cover-image: cover.png    # Works for HTML and ePub
   date: today
   date-format: "MMMM D, YYYY"
   chapters:
     - index.qmd
     - preface.qmd
     - concepts.qmd
-    - summary.qmd
+    - bayesian_intro.qmd
     - references.qmd
   downloads: [pdf, epub]
 
@@ -24,13 +25,14 @@ format:
       - brand
     toc: true
     toc-location: left
+    self-contained: true
 
   pdf:
     documentclass: scrreprt
     pdf-engine: xelatex
     cite-method: natbib
     keep-tex: true
+    fig-dev: pdf
 
   epub: default
-
-editor: visual
+  

@@ -1,0 +1,3 @@
+# Estimating a prevalence using JAGS
+
+TO COMPLETE

@@ -1,1 +1,1062 @@
-# Diagnostic Tests - Key Concepts
+# Key Concepts in Diagnostic Test Evaluation
+
+In this chapter, we review the key epidemiological measures used to describe the performance of a diagnostic test. We then discuss how diagnostic test validation studies can be designed and, finally, examine the consequences of assuming that a given test is a gold standard when, in fact, it is not.
+
+## Describing Diagnostic Test Performance
+
+Diagnostic tests are used to classify individuals as having or not having a particular disease or condition. Because no test is perfect, several epidemiological measures have been developed to describe test performance, interpret results, and support decision‑making. Numerous such measures have been proposed; however, in this chapter we will focus primarily on sensitivity, specificity, likelihood ratios, predictive values, and misclassification costs.
+
+### Sensitivity and Specificity
+
+Sensitivity and specificity describe how well a diagnostic test performs relative to an individual’s true disease status. It is important, however, to distinguish **analytical sensitivity and specificity**—concepts commonly used by laboratory scientists—from **epidemiological sensitivity and specificity**, as used in epidemiology and clinical research. Analytical sensitivity and analytical specificity describe the technical performance of an assay under controlled laboratory conditions. Analytical sensitivity refers to a test’s ability to detect small quantities of the target analyte (e.g., a pathogen, biomarker, or chemical compound) and is often defined in terms of the limit of detection, or the minimum concentration that can be reliably measured. Analytical specificity refers to a test’s ability to detect only the intended analyte and to avoid cross‑reactivity with other substances. Together, analytical sensitivity and specificity indicate whether an assay functions as intended in the laboratory, but they do not address whether the test correctly classifies individuals as diseased or non‑diseased.
+
+In contrast, epidemiological sensitivity and specificity describe how well a test classifies individuals with respect to their true disease status in a target population. Unlike their analytical counterparts, these measures reflect not only the intrinsic properties of the assay but also biological variation among individuals, disease stage, and the conditions under which the test is applied in practice. As such, they capture the real-world diagnostic performance of a test and are the parameters of primary interest in clinical and epidemiological studies.
+
+In this textbook, unless otherwise specified, we focus on epidemiological sensitivity and specificity. These measures are fundamental, as they form the basis for calculating other epidemiological quantities that are crucial for interpreting test results and for comparing alternative testing strategies. In particular, they are essential when evaluating different test‑interpretation thresholds or designing testing strategies that are optimal for a specific objective, consistent with a *fit‑for‑purpose* approach.
+
+The test **sensitivity** (Se) is the probability that a test yields a positive result (T+) given that an individual is truly diseased (D+):
+
+$$
+Se = P(T^+ \mid D^+)
+$$ {#eq-DSe}
+
+The test **specificity** (Sp) describes the ability of the test to correctly classify healthy individuals; that is, it is the probability that the test yields a negative result (T-) given that an individual is truly non‑diseased (D-):
+
+$$
+Sp = P(T^- \mid D^-)
+$$ {#eq-DSp}
+
+In principle, if a group of individuals is tested using a given diagnostic test and their true disease status is known, the test results can be summarized in a 2×2 contingency table as @tbl-2by2. This table provides the basis for computing the test sensitivity and specificity, as illustrated in the example below.
+
+|           | **D**+ | **D**- | **Total** |
+|:---------:|:------:|:------:|:---------:|
+|  **T**+   |   18   |   19   |    37     |
+|  **T**-   |   3    |   80   |    83     |
+| **Total** |   21   |   99   |    120    |
+
+: 2×2 contingency table summarizing the results of a hypothetical diagnostic test according to true disease status. {#tbl-2by2}
+
+```{r}
+#| include: false
+se <- round(18/(18+3), digits=2)
+sp <- round(80/(19+80), digits=2)
+```
+
+In the example above, the test sensitivity is estimated to be `r se` (or `r scales::percent(se)`; 18/21), and the test specificity is estimated to be `r sp` (80/99). Because these measures are simple proportions, we can compute frequentist 95% confidence intervals (95% CI) to quantify the uncertainty around these estimates using the following formula, where *P* is the observed proportion and *n* is its denominator:
+
+$$
+95CI = P \pm 1.96 \cdot \sqrt{\frac{P \cdot (1-P)}{n}}
+$$ {#eq-95prop}
+
+```{r}
+#| include: false
+se.l <- round((18/21)-1.96*sqrt((18/21*(1-18/21))/(21)), digits=2)
+se.h <- round(min((18/21)+1.96*sqrt((18/21*(1-18/21))/(21)), 1.0), digits=2)
+sp.l <- round((80/99)-1.96*sqrt((80/99*(1-80/99))/(99)), digits=2)
+sp.h <- round((80/99)+1.96*sqrt((80/99*(1-80/99))/(99)), digits=2)
+```
+
+Using this approach, our uncertainty around the estimated sensitivity can be represented as this 95% CI: `r se.l`, `r se.h`. Our uncertainty around the estimated specificity is 95% CI: `r sp.l`, `r sp.h`. In this example, the wider 95% confidence interval for sensitivity reflects its smaller denominator, as sensitivity is estimated using data from only 21 diseased individuals. In comparison, 99 healthy individuals were used to estimate the test's specificity.
+
+Often, a diagnostic test initially produces a quantitative measurement (e.g., an optical density \[OD\] in an Enzyme-Linked Immunosorbent Assay \[ELISA\]). A threshold is then applied to convert this continuous value into a binary classification (e.g., healthy vs. diseased). For such tests, a Receiver Operating Characteristic (ROC) curve can be used to characterize test performance across the full range of possible thresholds. An example of a ROC curve for a hypothetical test is shown in @fig-ROC .
+
+```{r}
+#| message: false
+#| warning: false
+#| include: false
+set.seed(123)
+
+# 1. Simulate data
+n <- 600
+
+# True disease status (0 = healthy, 1 = diseased)
+status <- rbinom(n, 1, 0.4)
+
+# Continuous test values:
+# Diseased have higher values on average
+test_value <- rnorm(n, mean = 0 + 2*status, sd = 1)
+
+df <- data.frame(
+  status = status,
+  test_value = test_value
+)
+
+```
+
+```{r fig-ROC}
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-cap: Receiver operating characteristic (ROC) curve illustrating the hypothetical test performance across the full range of possible thresholds. The red marker denotes the threshold that maximizes the Youden index. 
+
+library(pROC)
+library(ggplot2)
+
+# 2. ROC analysis
+roc_obj <- roc(df$status, df$test_value)
+#roc_smooth <- smooth(roc_obj, method = "density")
+
+# 3. AUC
+auc_value <- auc(roc_obj)
+
+# 4. Optimal threshold (Youden index)
+coords_best <- coords(
+  roc_obj,
+  x = "best",
+  best.method = "youden",
+  ret = c("threshold", "sensitivity", "specificity")
+)
+
+best_spec <- coords_best["specificity"][[1]]
+best_sens <- coords_best["sensitivity"][[1]]
+
+# 5. Prepare data for ggplot
+roc_df <- data.frame(
+  specificity = roc_obj$specificities,
+  sensitivity = roc_obj$sensitivities
+)
+# Order by increasing false positive rate
+roc_df <- roc_df[order(1 - roc_df$specificity), ]
+
+# 6. Plot ROC with optimal point
+ggplot(roc_df, aes(x = 1 - specificity, y = sensitivity)) +
+  geom_line(linewidth = 1) +
+  geom_abline(linetype = "dashed") +
+  geom_point(aes(x = 1 - best_spec, y = best_sens), size =4, shape=21, stroke=2, color="darkred", fill=NA) +
+  labs(
+    title = paste0("ROC Curve (AUC = ", round(auc_value, 3), ")"),
+    x = "False Positive Rate",
+    y = "Sensitivity"
+  ) +
+  theme_minimal()
+```
+
+Typically, a ROC curve plots a test's **false positive rate** (1 – specificity) for a given threshold against its **sensitivity**. Often, a 45-degree diagonal line is included, representing a test with no discriminative ability (equivalent to random chance). A ROC curve that bows away from this line toward the upper-left corner indicates a more discriminant test, whereas a curve closer to the diagonal indicates poorer discrimination. The **area under the curve (AUC)** is commonly reported to quantify the test’s overall discriminatory power; for example, an AUC of 0.92 (see @fig-ROC) indicates very high discrimination. The AUC is sometimes also used to compare the discriminative ability of different tests.
+
+It is important to note, however, that the ROC curve and AUC describe test performance **across the full range of possible thresholds**. In practice, only a **single threshold** is typically applied, so ROC curve analyses are most useful for **initial characterization of a test**, but they are less informative for directly comparing diagnostic tests in operational settings.
+
+In @fig-ROC , a marker was added to indicate the threshold with the highest Youden index ( *J* ). The Youden index is a metric used to summarize the overall discriminative ability of a test at a specific threshold, defined as:
+
+$$
+J=Se+Sp-1
+$$ {#eq-Youden}
+
+The Youden index is sometimes used to help choose a threshold, usually the cutoff that maximizes the sum of sensitivity and specificity, often called the “most discriminant threshold.” On the ROC curve, this threshold corresponds to the point farthest from the 45-degree diagonal line toward the upper-left corner.
+
+In most situations, however, we **discourage using the maximum Youden index** as the sole criterion for selecting a test threshold because:
+
+-   The Youden index does not account for disease prevalence or misclassification costs.
+-   If false positives and false negatives have different clinical consequences, another threshold may be preferred even if it doesn’t maximize *J*.
+
+From a practical standpoint, the maximum Youden index represents the “optimal threshold” only under very specific conditions: when disease prevalence is exactly 50% and the costs of a false positive and false negative are identical. Such conditions are uncommon in real-world applications. Later in this chapter, we discuss how **misclassification cost analysis** can be used to select a **fit-for-purpose threshold**.
+
+In summary, sensitivity and specificity describe intrinsic properties of a diagnostic test. As such, they are generally independent of the population in which the test is applied, provided that testing conditions are comparable and that the disease process is similar. Although these measures cannot be used directly to interpret individual test results or to select the most appropriate diagnostic test for a specific purpose, they form the foundation for calculating other epidemiologically relevant measures. Consequently, the estimation of sensitivity and specificity is central to most diagnostic test validation studies.
+
+### Likelihood Ratios
+
+Diagnostic likelihood ratios (positive likelihood ratio, LR+; and negative likelihood ratio, LR-) can also be used to describe test accuracy. These measures are computed from the test's estimated sensitivity and specificity.
+
+$$
+LR^+ = \frac{Se}{1-Sp}
+$$ {#eq-lrp}
+
+and
+
+$$
+LR^- = \frac{1-Se}{Sp}
+$$ {#eq-lrn}
+
+Likelihood ratios are thus essentially a reparameterization of sensitivity and specificity, but with more direct clinical utility. The LR+ describes how much more likely a positive test result is in a diseased compared with a non-diseased individual. It answers the question: ***If the test is positive, how much should I increase my belief that the patient has the disease?*** Similarly, the LR- describes how much less likely a negative test result is in a diseased compared with a non-diseased individual. It answers the question: ***If the test is negative, how much should I decrease my belief that the patient has the disease?***
+
+Likelihood ratios act as multipliers of the odds of disease:
+
+$$
+Post\text{–}test\:odds = Pre\text{–}test\:odds  \cdot LR
+$$ {#eq-posttestodds}
+
+For instance, a test with a sensitivity of 0.80 and a specificity of 0.90 has a LR+ of 8 and an LR- of 0.22. A LR+ of 8 can be interpreted as: a positive result is 8 times more likely in diseased than in non-diseased individuals. Equivalently, the pre-test odds of disease are multiplied by 8 when the test result is positive.
+
+The notion of pre‑test odds (or pre‑test probability) is commonly used by practitioners, even if not always explicitly articulated. It reflects the clinician’s assessment of the proportion of patients with a similar clinical profile—i.e., comparable history, signs, and symptoms—who truly have the condition of interest. These patients can be viewed as a hypothetical cohort sharing the same clinical presentation, a concept that differs from the population‑level framework underlying predictive values (see following section). This patient‑centred approach is fundamental to the use of likelihood ratios and to the application of Bayes’ theorem, whereby pre‑test probability is updated, based on the test result, into a post‑test probability. The change from pre‑test to post‑test probability can be interpreted as the incremental diagnostic value added by the test in the clinical setting.
+
+Likelihood ratios may be less intuitive than sensitivity and specificity, as they rely on odds and reflect an application of Bayesian reasoning. However, they are **more useful for clinical interpretation and decision-making**.
+
+A useful clinical tool based on likelihood ratios is the Fagan nomogram, which helps visualize how test results modify disease probability. The Fagan nomogram has three vertical axes:
+
+-   Pre-test probability (left)
+
+-   Likelihood ratio (middle)
+
+-   Post-test probability (right)
+
+A straight line drawn from the pre-test probability through the LR+ or LR− intersects the post-test probability, showing directly how much a test result shifts the probability of disease.
+
+Various web-based and mobile applications can be used to generate Fagan nomograms. In @fig-FN5, we illustrate how the test described above (Se = 0.80, Sp = 0.90; LR+ = 8.0, LR- = 0.22) modifies prior beliefs when the pre-test probability of disease is 5% (e.g., in the context of routine annual screening in an otherwise healthy individual).
+
+```{r fig-FN5}
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-cap: Fagan nomogram for a diagnostic test with 80% sensitivity and 90% specificity, for a patient with a pre-test probability of disease of 5%.
+
+#-----------------------------
+# Helpers
+#-----------------------------
+prob_to_odds <- function(p) p / (1 - p)
+odds_to_prob <- function(o) o / (1 + o)
+
+library(ggplot2)
+library(scales)
+
+#-----------------------------
+# Inputs
+#-----------------------------
+pretest <- 0.05
+Se <- 0.80
+Sp <- 0.90
+PLR <- Se/(1-Sp)
+NLR <- (1-Se)/Sp
+
+# Axis positions
+x_pre  <- 0
+x_lr   <- 1
+x_post <- 2
+
+# Log-odds
+y_pre <- log10(prob_to_odds(pretest))
+y_post_pos <- y_pre + log10(PLR)
+y_post_neg <- y_pre + log10(NLR)
+
+#-----------------------------
+# Derived values (formatted)
+#-----------------------------
+post_pos <- odds_to_prob(prob_to_odds(pretest) * PLR)
+post_neg <- odds_to_prob(prob_to_odds(pretest) * NLR)
+
+label_text <- paste0(
+  "Pre-test: ", percent(pretest, accuracy = 1), "\n",
+  "Se: ", percent(Se, accuracy = 2), "\n",
+  "Sp: ", percent(Sp, accuracy = 2), "\n",
+  "LR+: ", sprintf("%.1f", PLR), "\n",
+  "LR-: ", sprintf("%.2f", NLR), "\n",
+  "Post+ : ", percent(post_pos, accuracy = 1), "\n",
+  "Post- : ", percent(post_neg, accuracy = 1)
+)
+
+#-----------------------------
+# KEY STEP: align LR axis
+#-----------------------------
+# We force the LR+ point to lie exactly on the line
+y_lr_anchor <- (y_pre + y_post_pos) / 2   # midpoint on the straight line
+
+# Therefore:
+C <- y_lr_anchor - log10(PLR)
+
+# Apply shift to LR scale
+lr_ticks <- c(0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000)
+lr_y <- log10(lr_ticks) + C
+
+#-----------------------------
+# Probability ticks
+#-----------------------------
+prob_ticks <- c(0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99)
+prob_y <- log10(prob_to_odds(prob_ticks))
+
+#-----------------------------
+# Plot
+#-----------------------------
+# Add small margin
+vline_bottom <- min(prob_y) - 1.5
+vline_top    <- max(prob_y) + 0.5  # same as before
+
+ggplot() +
+  # vertical lines as segments with margin
+  geom_segment(aes(x = x_pre, xend = x_pre, y = vline_bottom, yend = vline_top)) +
+  geom_segment(aes(x = x_lr,  xend = x_lr,  y = vline_bottom, yend = vline_top)) +
+  geom_segment(aes(x = x_post,xend = x_post,y = vline_bottom, yend = vline_top)) +
+
+  # straight lines
+  geom_segment(aes(x = x_pre, y = y_pre,
+                   xend = x_post, yend = y_post_pos),
+               color = "#1F78B4", linewidth = 1) +
+  geom_segment(aes(x = x_pre, y = y_pre,
+                   xend = x_post, yend = y_post_neg),
+               color = "#E31A1C", linewidth = 1) +
+
+  # probability labels
+  geom_text(aes(x = x_pre - 0.05, y = prob_y,
+                label = percent(prob_ticks)),
+            hjust = 1, size = 3) +
+  geom_text(aes(x = x_post + 0.05, y = prob_y,
+                label = percent(prob_ticks)),
+            hjust = 0, size = 3) +
+
+  # LR labels
+  geom_text(aes(x = x_lr, y = lr_y,
+                label = lr_ticks),
+            vjust = -0.5, size = 3) +
+
+  # Titles above the figure
+  annotate("text", x = x_pre, y = max(prob_y) + 1.0,
+           label = "Pre-test probability", fontface = "bold", size = 4) +
+  annotate("text", x = x_lr, y = max(prob_y) + 1.0,
+           label = "Likelihood ratio", fontface = "bold", size = 4) +
+  annotate("text", x = x_post, y = max(prob_y) + 1.0,
+           label = "Post-test probability", fontface = "bold", size = 4) +
+
+  # Info box
+  annotate("text", x = 1.55, y = max(prob_y) + 0.5,
+           label = label_text,
+           hjust = 0, vjust = 1, size = 3.5) +
+
+  # Keep everything visible outside the panel
+  coord_cartesian(clip = "off", ylim = c(vline_bottom, max(prob_y) + 1.2)) +
+
+  theme_void() +
+  xlim(-0.3, 2.3)
+```
+
+A positive test result increases the post-test probability of disease to approximately 30%, whereas a negative test result reduces it to about 1%.
+
+If the same test is applied to a patient with a pre-test probability of 40% (e.g., an individual presenting with clinical signs compatible with the disease), the resulting Fagan nomogram is shown in @fig-FN40 .
+
+```{r fig-FN40}
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-cap: Fagan nomogram for a diagnostic test with 80% sensitivity and 90% specificity, for a patient with a pre-test probability of disease of 40%.
+
+#-----------------------------
+# Helpers
+#-----------------------------
+prob_to_odds <- function(p) p / (1 - p)
+odds_to_prob <- function(o) o / (1 + o)
+
+library(ggplot2)
+library(scales)
+
+#-----------------------------
+# Inputs
+#-----------------------------
+pretest <- 0.40
+Se <- 0.80
+Sp <- 0.90
+PLR <- Se/(1-Sp)
+NLR <- (1-Se)/Sp
+
+# Axis positions
+x_pre  <- 0
+x_lr   <- 1
+x_post <- 2
+
+# Log-odds
+y_pre <- log10(prob_to_odds(pretest))
+y_post_pos <- y_pre + log10(PLR)
+y_post_neg <- y_pre + log10(NLR)
+
+#-----------------------------
+# Derived values (formatted)
+#-----------------------------
+post_pos <- odds_to_prob(prob_to_odds(pretest) * PLR)
+post_neg <- odds_to_prob(prob_to_odds(pretest) * NLR)
+
+label_text <- paste0(
+  "Pre-test: ", percent(pretest, accuracy = 1), "\n",
+  "Se: ", percent(Se, accuracy = 2), "\n",
+  "Sp: ", percent(Sp, accuracy = 2), "\n",
+  "LR+: ", sprintf("%.1f", PLR), "\n",
+  "LR-: ", sprintf("%.2f", NLR), "\n",
+  "Post+ : ", percent(post_pos, accuracy = 1), "\n",
+  "Post- : ", percent(post_neg, accuracy = 1)
+)
+
+#-----------------------------
+# KEY STEP: align LR axis
+#-----------------------------
+# We force the LR+ point to lie exactly on the line
+y_lr_anchor <- (y_pre + y_post_pos) / 2   # midpoint on the straight line
+
+# Therefore:
+C <- y_lr_anchor - log10(PLR)
+
+# Apply shift to LR scale
+lr_ticks <- c(0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000)
+lr_y <- log10(lr_ticks) + C
+
+#-----------------------------
+# Probability ticks
+#-----------------------------
+prob_ticks <- c(0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99)
+prob_y <- log10(prob_to_odds(prob_ticks))
+
+#-----------------------------
+# Plot
+#-----------------------------
+# Add small margin
+vline_bottom <- min(prob_y) - 0.7
+vline_top    <- max(prob_y) + 0.5  # same as before
+
+ggplot() +
+  # vertical lines as segments with margin
+  geom_segment(aes(x = x_pre, xend = x_pre, y = vline_bottom, yend = vline_top)) +
+  geom_segment(aes(x = x_lr,  xend = x_lr,  y = vline_bottom, yend = vline_top)) +
+  geom_segment(aes(x = x_post,xend = x_post,y = vline_bottom, yend = vline_top)) +
+
+  # straight lines
+  geom_segment(aes(x = x_pre, y = y_pre,
+                   xend = x_post, yend = y_post_pos),
+               color = "#1F78B4", linewidth = 1) +
+  geom_segment(aes(x = x_pre, y = y_pre,
+                   xend = x_post, yend = y_post_neg),
+               color = "#E31A1C", linewidth = 1) +
+
+  # probability labels
+  geom_text(aes(x = x_pre - 0.05, y = prob_y,
+                label = percent(prob_ticks)),
+            hjust = 1, size = 3) +
+  geom_text(aes(x = x_post + 0.05, y = prob_y,
+                label = percent(prob_ticks)),
+            hjust = 0, size = 3) +
+
+  # LR labels
+  geom_text(aes(x = x_lr, y = lr_y,
+                label = lr_ticks),
+            vjust = -0.5, size = 3) +
+
+  # Titles above the figure
+  annotate("text", x = x_pre, y = max(prob_y) + 1.0,
+           label = "Pre-test probability", fontface = "bold", size = 4) +
+  annotate("text", x = x_lr, y = max(prob_y) + 1.0,
+           label = "Likelihood ratio", fontface = "bold", size = 4) +
+  annotate("text", x = x_post, y = max(prob_y) + 1.0,
+           label = "Post-test probability", fontface = "bold", size = 4) +
+
+  # Info box
+  annotate("text", x = 1.55, y = max(prob_y) + 0.5,
+           label = label_text,
+           hjust = 0, vjust = 1, size = 3.5) +
+
+  # Keep everything visible outside the panel
+  coord_cartesian(clip = "off", ylim = c(vline_bottom, max(prob_y) + 1.2)) +
+
+  theme_void() +
+  xlim(-0.3, 2.3)
+```
+
+In this case, a positive test result increases the post-test probability to approximately 84%, while a negative test result reduces it to about 13%.
+
+Likelihood ratios provide a coherent framework to interpret diagnostic test results by quantifying how much a result shifts the probability of disease from a given pre-test level. However, their practical use requires specifying a pre-test probability and reasoning in terms of odds, which may be less intuitive in many clinical contexts. As a result, it is often useful to consider complementary measures that express more directly the probability of disease given a test result.
+
+### Predictive Values
+
+From the perspective of clinicians and decision‑makers, a different question is often more relevant: *Given a particular test result, how confident can we be that it reflects the true disease status of an individual?* Answering this question requires moving beyond test‑centered measures to result‑centered measures, namely the predictive values.
+
+The positive predictive value (PPV) is the probability that an individual truly has the disease given a positive test result, whereas the negative predictive value (NPV) is the probability that an individual is truly healthy given a negative test result. In contrast to sensitivity and specificity, predictive values depend not only on the test’s performance but also on the pre‑test probability of disease, commonly approximated by the disease prevalence in the population being tested.
+
+As a result, even when a test has fixed sensitivity and specificity, the confidence that can be placed in a positive or negative result may vary substantially across populations.
+
+To illustrate this, we could use the example below where a test with a sensitivity and specificity of, respectively, 0.90 and 0.95 is used in a population with a disease prevalence of 0.05 (i.e., 5%).
+
+```{r}
+#| include: false
+
+set.seed(123)  
+n <- 200
+dt <- data.frame(
+  x   = runif(n),        
+  y   = runif(n),        
+  d5  = rbinom(n, 1, 0.05),  # 5% ones, 95% zeros
+  d30 = rbinom(n, 1, 0.30)
+)
+
+
+dt$t5 <- with(dt, ifelse(
+  d5 == 1,
+  rbinom(sum(d5 == 1), 1, 0.90),        
+  rbinom(sum(d5 == 0), 1, 0.05)         
+))
+
+dt$t30 <- with(dt, ifelse(
+  d30 == 1,
+  rbinom(sum(d30 == 1), 1, 0.90),        
+  rbinom(sum(d30 == 0), 1, 0.05)         
+))
+
+dt$d5 <- ifelse(dt$d5==1, "Diseased", "Healthy")
+dt$d30 <- ifelse(dt$d30==1, "Diseased", "Healthy")
+
+dt$t5 <- ifelse(dt$t5==1, "Positive", "Negative")
+dt$t30 <- ifelse(dt$t30==1, "Positive", "Negative")
+```
+
+```{r}
+#| message: false
+#| warning: false
+#| include: false
+
+library(ggplot2)
+library(patchwork)
+
+# ---------------------------------
+# Aesthetics
+# ---------------------------------
+d_colors <- c("Diseased" = "darkred", "Healthy" = "darkgrey")
+d_shapes <- c("Diseased" = 16, "Healthy" = 1)
+
+base_theme <- theme(
+  axis.title = element_blank(),
+  axis.text  = element_blank(),
+  axis.ticks = element_blank(),
+  panel.grid = element_blank(),
+  panel.background = element_rect(fill = "white", colour = "darkgrey"),
+  plot.title = element_text(size = 11, hjust = 0.5),
+  legend.position = "bottom"
+)
+
+# ---------------------------------
+# Plot: All individuals
+# ---------------------------------
+p_all <- ggplot(dt, aes(x = x, y = y, color = d5, shape = d5)) +
+  geom_point(alpha = 0.6, size = 2, stroke = 1.1) +
+  scale_color_manual(values = d_colors, name = "True status") +
+  scale_shape_manual(values = d_shapes,  name = "True status") +
+  coord_fixed(ratio = 2, xlim = c(0, 1), ylim = c(0, 1)) +
+  ggtitle("All individuals") +
+  base_theme +
+  labs(y = NULL)
+
+# ---------------------------------
+# Plot: Test positive
+# ---------------------------------
+p_pos <- ggplot(
+  dt[dt$t5 == "Positive", ],
+  aes(x = x, y = y, color = d5, shape = d5)
+) +
+  geom_point(alpha = 0.6, size = 2, stroke = 1.1) +
+  scale_color_manual(values = d_colors, name = "True status") +
+  scale_shape_manual(values = d_shapes,  name = "True status") +
+  coord_fixed(ratio = 2, xlim = c(0, 1), ylim = c(0, 1)) +
+  ggtitle("Test positive") +
+  base_theme +
+  labs(y = NULL)
+
+# ---------------------------------
+# Plot: Test negative
+# ---------------------------------
+p_neg <- ggplot(
+  dt[dt$t5 == "Negative", ],
+  aes(x = x, y = y, color = d5, shape = d5)
+) +
+  geom_point(alpha = 0.6, size = 2, stroke = 1.1) +
+  scale_color_manual(values = d_colors, name = "True status") +
+  scale_shape_manual(values = d_shapes,  name = "True status") +
+  coord_fixed(ratio = 2, xlim = c(0, 1), ylim = c(0, 1)) +
+  ggtitle("Test negative") +
+  base_theme +
+  labs(y = NULL)
+```
+
+```{r fig-PV5}
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-cap: True disease status and test outcomes for a diagnostic test with 90% sensitivity and 95% specificity, applied to a population with 5% disease prevalence.
+
+(p_all | p_pos | p_neg) +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom")
+```
+
+In such a population, only about 50% of individuals with a positive test result (T+) are truly diseased (@fig-PV5) . Consequently, confidence in a positive test result is limited. In contrast, most individuals with a negative test result (T-) are truly healthy.
+
+If the same test were applied to a population with a disease prevalence of 30%, the situation would be markedly different. In this setting, we would have high confidence in the true disease status of individuals with a positive test result (T+), as well as those with a negative test result (T-; @fig-PV30).
+
+```{r}
+#| message: false
+#| warning: false
+#| include: false
+
+# ---------------------------------
+# Plot: All individuals
+# ---------------------------------
+p_all2 <- ggplot(dt, aes(x = x, y = y, color = d30, shape = d30)) +
+  geom_point(alpha = 0.6, size = 2, stroke = 1.1) +
+  scale_color_manual(values = d_colors, name = "True status") +
+  scale_shape_manual(values = d_shapes,  name = "True status") +
+  coord_fixed(ratio = 2, xlim = c(0, 1), ylim = c(0, 1)) +
+  ggtitle("All individuals") +
+  base_theme +
+  labs(y = NULL)
+
+# ---------------------------------
+# Plot: Test positive
+# ---------------------------------
+p_pos2 <- ggplot(
+  dt[dt$t30 == "Positive", ],
+  aes(x = x, y = y, color = d30, shape = d30)
+) +
+  geom_point(alpha = 0.6, size = 2, stroke = 1.1) +
+  scale_color_manual(values = d_colors, name = "True status") +
+  scale_shape_manual(values = d_shapes,  name = "True status") +
+  coord_fixed(ratio = 2, xlim = c(0, 1), ylim = c(0, 1)) +
+  ggtitle("Test positive") +
+  base_theme +
+  labs(y = NULL)
+
+# ---------------------------------
+# Plot: Test negative
+# ---------------------------------
+p_neg2 <- ggplot(
+  dt[dt$t30 == "Negative", ],
+  aes(x = x, y = y, color = d30, shape = d30)
+) +
+  geom_point(alpha = 0.6, size = 2, stroke = 1.1) +
+  scale_color_manual(values = d_colors, name = "True status") +
+  scale_shape_manual(values = d_shapes,  name = "True status") +
+  coord_fixed(ratio = 2, xlim = c(0, 1), ylim = c(0, 1)) +
+  ggtitle("Test negative") +
+  base_theme +
+  labs(y = NULL)
+
+```
+
+```{r fig-PV30}
+#| echo: false
+#| fig-cap: True disease status and test outcomes for a diagnostic test with 90% sensitivity and 95% specificity, applied to a population with 30% disease prevalence.
+
+(p_all2 | p_pos2 | p_neg2) +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom")
+
+```
+
+In low‑prevalence settings, a large proportion of positive test results may be false positives, leading to a low PPV, while the NPV remains high. Conversely, in high‑prevalence settings, the PPV increases and the NPV decreases. Predictive values therefore translate test performance into **context‑specific interpretive measures**, explicitly incorporating prior information about disease frequency. More specifically:
+
+$$
+PPV = P(D^+ \mid T^+) = \frac{True^+}{True^+ + False^+} = \frac{Se \cdot P}{Se \cdot P + (1-Sp) \cdot (1-P)}
+$$ {#eq-ppv} and
+
+$$
+NPV = P(D^- \mid T^-) = \frac{True^-}{True^- + False^-} = \frac{Sp \cdot (1-P)}{Sp \cdot (1-P)+(1-Se) \cdot P}
+$$ {#eq-NPV}
+
+This dependence on prevalence highlights a key distinction between sensitivity and specificity—measures of how a test behaves *given disease status*—and predictive values, which quantify how disease status can be inferred *given a test result*. Predictive values thus play a central role in clinical decision‑making, screening program evaluation, and public‑health policy, where the consequences of false‑positive and false‑negative results depend strongly on the population being tested.
+
+### Misclassification Costs
+
+So far, we have seen that sensitivity and specificity describe a test’s intrinsic accuracy, independently of the context in which it is used. Likelihood ratios, in turn, quantify how a test result modifies the probability of disease for a given patient by updating a pre-test belief. Finally, predictive values incorporate disease frequency to provide a context-dependent measure of test performance, expressing the probability of disease conditional on the observed test result.
+
+When comparing different interpretations of a test (e.g., using different thresholds), or comparing different tests or testing strategies, it is important to consider the population in which the test will be applied. In this context, predictive values may provide a more complete picture of test performance than sensitivity and specificity alone.
+
+An additional element not captured by predictive values is the consequence of incorrect classification, known as misclassification costs, which reflect the impact of false positive and false negative results. Here, the term “costs” does not necessarily refer to monetary costs but may also include individual or broader societal consequences.
+
+To conduct a misclassification costs analysis, one first needs to define the consequences of incorrectly classifying an individual. For example, consider an animal health scenario: an ELISA test targeting pregnancy-associated glycoprotein is used to determine whether a cow is pregnant. The test produces an optical density value, which must be interpreted using a chosen threshold.
+
+-   **False positive (FP)**: A cow incorrectly classified as pregnant may be left untreated. Later, it may be identified as non-pregnant through subsequent testing or observation. This cow can be rebred, so only a few weeks of productivity are lost.
+
+-   **False negative (FN)**: A cow incorrectly classified as non-pregnant may receive prostaglandins, leading to abortion. Recovery and successful rebreeding may take months, or the cow may fail to reproduce and be culled, representing a much higher loss.
+
+This example illustrates that the **consequences of misclassification depend on how the test is used in practice**. When performing a misclassification costs analysis, we define the **cost ratio** (*r*) between false negatives and false positives:
+
+$$
+r=\frac{False^-
+\: costs}{False^+ \:costs}
+$$ {#eq-rMCT}
+
+These costs can be quantified through explicit economic analysis, for example, by estimating additional delays in obtaining pregnancy, unnecessary drug administration, premature culling, and similar consequences. Some costs, however, may be intangible, such as stress from a false-positive cancer result in humans, and may be difficult to quantify numerically.
+
+In many cases, it is evident that one type of misclassification carries a greater consequence than the other. For instance, in the cow example, the cost of a false negative (losing a cow) clearly exceeds that of a false positive (a few weeks of lost productivity). A misclassification costs analysis can therefore be conducted using a few plausible values of the cost ratio *r*, such as 2:1, 3:1, or 5:1.
+
+The misclassification cost term (*MCT*) combines test accuracy (sensitivity and specificity), disease prevalence (*P*), and the cost ratio (*r*):
+
+$$MCT=(1-P) \cdot (1-Sp) + r \cdot P \cdot (1-Se)$$ {#eq-MCT}
+
+As we can see in @eq-MCT , the first term represents the probability of a false positive. The second term represents the probability of a false negative, weighted by the cost ratio *r*.
+
+If false negative costs are less important (r \< 1), the second term is down-weighted. If false negative costs are more important (r \> 1), it is up-weighted.
+
+Unlike sensitivity, specificity, likelihood ratios, or predictive values, the MCT has no direct interpretation for a single test. It is designed specifically to compare testing options (e.g., different tests or thresholds) in a given population with a defined purpose. The testing option with the lowest MCT is considered optimal for the defined context and purpose.
+
+Returning to the cow pregnancy test example, a misclassification cost analysis could be used to identify a fit‑for‑purpose OD threshold for the ELISA test. First, the test sensitivity and specificity would be estimated for a series of potential thresholds (e.g., ≥ 0.00, ≥ 0.05, ≥ 0.10, …, ≥ 1.00). Subsequently, misclassification cost terms (MCTs) could be computed for each threshold, assuming, for example, a pregnancy prevalence of 0.55 (typical of cows tested between 28 and 45 days after breeding) and false‑negative‑to‑false‑positive cost ratios of 3:1 or 5:1.
+
+```{r}
+#| message: false
+#| warning: false
+#| include: false
+
+library(readxl)
+
+df <- read_xlsx("Data/MCT/MCT PAG 2017.xlsx")
+
+P=0.55
+
+df$PPV <- df$Se*P/(df$Se*P + (1-P)*(1-df$Sp))
+df$NPV <- (df$Sp*(1-P))/((1-df$Se)*P + (1-P)*(df$Sp))
+
+df$MCT3 <- (1-P)*(1-df$Sp) + 3*P*(1-df$Se)
+df$MCT5 <- (1-P)*(1-df$Sp) + 5*P*(1-df$Se)
+
+df$youden <- df$Se+df$Sp-1
+
+```
+
+When examining the sensitivity and specificity of the test across candidate thresholds (see @fig-accuPAG), we observe a rapid increase in specificity as the OD threshold increases from ≥ 0.05 to ≥ 0.35, while sensitivity remains relatively stable over this range. In contrast, for OD thresholds above ≥ 0.45, sensitivity declines noticeably, with only marginal additional gains in specificity. If the Youden index were calculated, its maximum value would occur at an OD threshold of ≥ 0.40. However, this does not necessarily imply that this threshold is optimal for the intended purpose of the test, as the Youden index does not account for disease prevalence or the relative consequences of diagnostic errors.
+
+```{r fig-accuPAG}
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-cap: Accuracy, across different potential OD thresholds, of an ELISA test detecting pregnancy in dairy cows.
+ 
+
+library(ggplot2)
+
+ggplot(df, aes(x = Threshold)) +
+ geom_line(aes(y = Se, color = "Se")) +
+  geom_point(aes(y = Se, color = "Se")) +
+  geom_line(aes(y = Sp, color = "Sp")) +
+  geom_point(aes(y = Sp, color = "Sp")) +
+  scale_color_manual(
+    values = c("Se" = "#1b9e77", "Sp" = "#d95f02"),
+    labels = c("Se" = "Sensitivity", "Sp" = "Specificity")
+  ) +
+labs(
+    x = "ELISA OD threshold",
+    y = "Accuracy",
+    color = "Accuracy measure"
+  ) +
+  scale_x_continuous(breaks = seq(0, 1, by = 0.1)) +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank())
+
+
+```
+
+As shown in @fig-mctPAG, misclassification costs are relatively high, as expected, when using an OD threshold of ≥ 0.00 (i.e., classifying all cows as pregnant) or ≥ 0.80 (i.e., classifying most cows as non-pregnant). Note that the MCT value itself, for example 0.23 at an OD threshold of ≥ 0.00, has no direct, standalone interpretation; it can only be used to compare diagnostic strategies.
+
+For instance, we observe that the MCT decreases as the OD threshold increases beyond ≥ 0.00. For both false-negative–to–false-positive cost ratios (3:1 and 5:1), the lowest MCT is observed at an OD threshold of ≥ 0.25. Beyond this point, misclassification costs begin to increase again.
+
+Thus, in this specific example, an OD threshold of ≥ 0.25 could be proposed as the optimal threshold, given the intended use of the test—namely, application in a population with a pregnancy prevalence of 0.55 and in diagnostic contexts where the consequences of false-negative results are three to five times greater than those of false-positive results.
+
+```{r fig-mctPAG}
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-cap: Misclassification cost analysis for different potential OD thresholds for an ELISA test detecting pregnancy and used in dairy herds with a pregnancy prevalence of 55% and for two false negative (FN) to false positive (FP) costs ratio.
+ 
+
+library(ggplot2)
+
+ggplot(df, aes(x = Threshold)) +
+ geom_line(aes(y = MCT3, color = "MCT3")) +
+  geom_point(aes(y = MCT3, color = "MCT3")) +
+  geom_line(aes(y = MCT5, color = "MCT5")) +
+  geom_point(aes(y = MCT5, color = "MCT5")) +
+  scale_color_manual(
+    values = c("MCT3" = "#1b9e77", "MCT5" = "#d95f02"),
+    labels = c("MCT3" = "3:1", "MCT5" = "5:1")
+  ) +
+labs(
+    x = "ELISA OD threshold",
+    y = "MCT",
+    color = "FN:FP costs ratio"
+  ) +
+  scale_x_continuous(breaks = seq(0, 1, by = 0.1)) +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank())
+
+```
+
+In conclusion, while traditional diagnostic performance measures such as sensitivity, specificity, PPV, and NPV are essential for characterizing how a test performs, they provide only a partial basis for decision‑making. These metrics describe accuracy under fixed assumptions but do not explicitly account for the underlying prevalence of the condition in the target population nor for the relative consequences of diagnostic errors. Misclassification cost term analysis directly integrates these two critical elements by weighting false‑positive and false‑negative outcomes according to their real‑world consequences and expected frequency. As a result, MCT analysis enables principled comparisons between diagnostic tests and supports the identification of thresholds that are genuinely fit for purpose, rather than merely statistically optimal. By shifting the focus from abstract accuracy measures to expected decision‑level impact, MCT analysis provides a transparent and context‑dependent framework that aligns diagnostic testing strategies with clinical, economic, or population‑level priorities.
+
+## Designing Diagnostic Test Validation Studies
+
+Diagnostic test validation studies investigate the ability of one or more tests to correctly classify individuals with respect to a target condition. The target condition can take different forms, including a disease or disease stage, a health condition (e.g., pregnancy), or a future event (e.g., mortality following surgery). Precisely defining the target condition is an essential component of any validation study. The index test may take various forms, including laboratory assays, imaging procedures, or clinical signs.
+
+In this section, we review key features that should be considered when designing a study to evaluate the performance of a diagnostic test, with particular attention to elements that are frequently overlooked. As in the previous section, the goal is not to provide an exhaustive treatment, but rather to highlight core design considerations relevant to most applications. These considerations relate to the selection of participants, the tests themselves, the analytical approach, and the reporting of results.
+
+### Participants
+
+As we will see in the next chapters, an important output of Bayesian latent class models is an estimate of the true prevalence of the target condition in the population. **When the objective is to make inferences about this prevalence in a target population**, participant recruitment should follow the general epidemiological principles of prevalence studies: individuals should be sampled from a well-defined source population using a probability-based design, with selection processes that are independent of disease status and that minimize or account for non-response.
+
+In contrast, **when the primary objective is to evaluate the performance of one or more diagnostic tests**, two broad types of data collection processes are commonly encountered: (1) prospective studies, typically designed specifically for the purpose of test validation; and (2) retrospective studies, which rely on existing data that may not have been collected with this objective in mind. In both cases, the mechanisms used to select participants must be carefully examined, as they can introduce selection bias and lead to distorted estimates of test performance. When existing data are used, these limitations cannot always be remedied. Nonetheless, careful consideration and transparent discussion of the potential biases introduced by the data collection process are essential for the appropriate interpretation of test performance estimates.
+
+A first element to consider when designing participant recruitment is the **intended use of the test**. If the test is designed for screening in apparently healthy individuals, then clinically ill individuals should generally be excluded. Conversely, if the test is intended to diagnose a condition that may be subclinical or associated with clinical signs, the study population should include both unaffected individuals and individuals across the different stages of the condition.
+
+For many conditions, **disease progression spans a continuum**, from early infection, to detectable biological responses (e.g., immune response), to the appearance of clinical signs that may evolve from mild to severe. These stages define the disease spectrum. Ideally, **participants should be recruited such that this spectrum, and the relative frequency of its stages, are adequately represented in the study population**.
+
+As an example, when no gold standard is available, it may be tempting to recruit individuals in very advanced stages of the condition, for instance those with pathognomonic signs, and to consider them as truly diseased. Individuals deemed at very low risk of having the condition (e.g., from populations or regions where the condition has not been reported) may then be used to represent truly non-diseased individuals. The test under evaluation could then be applied, and its results cross-classified against these assumed disease statuses to estimate its sensitivity and specificity. However, even if these classifications were perfectly accurate, the resulting estimates would reflect the performance of the test in distinguishing advanced cases from clearly non-diseased individuals, rather than its performance across the full disease spectrum. This can lead to biased (typically over-optimistic) estimates of test accuracy, particularly when advanced cases represent only a small proportion of all affected individuals.
+
+```{r}
+#| message: false
+#| warning: false
+#| include: false
+
+library(dplyr)
+library(truncnorm)
+
+set.seed(123)
+
+#-----------------------------
+# Simulate data
+#-----------------------------
+
+data <- bind_rows(
+  data.frame(group = "Healthy", value = rtruncnorm(
+  n = 600,
+  a = 0,        # lower bound
+  b = Inf,      # upper bound
+  mean = 2,
+  sd = 0.7
+)),
+  data.frame(group = "Subclinical Stage I", value = rnorm(100, mean = 3, sd = 0.6)),
+  data.frame(group = "Subclinical Stage II", value = rnorm(150, mean = 3.5, sd = 0.6)),
+  data.frame(group = "Clinical mild", value = rnorm(75, mean = 4.2, sd = 0.5)),
+  data.frame(group = "Clinical advanced", value = rnorm(50, mean = 5, sd = 0.5))
+)
+
+# Order groups for legend
+data$group <- factor(
+  data$group,
+  levels = c("Healthy",
+             "Subclinical Stage I",
+             "Subclinical Stage II",
+             "Clinical mild",
+             "Clinical advanced")
+)
+
+# Threshold
+threshold <- 3.5
+data$test <- ifelse(data$value>=threshold, 1, 0) 
+
+# Compute Se and Sp
+# Bad design
+results1 <- data %>%
+  summarise(
+    sensitivity = mean(test == 1 & group == "Clinical advanced") /
+                  mean(group == "Clinical advanced"),
+    
+    specificity = mean(test == 0 & group == "Healthy") /
+                  mean(group == "Healthy")
+  )
+
+# Complete design
+results2 <- data %>%
+  summarise(
+    sensitivity = mean(test == 1 & group != "Healthy") /
+                  mean(group != "Healthy"),
+    
+    specificity = mean(test == 0 & group == "Healthy") /
+                  mean(group == "Healthy")
+  )
+
+
+```
+
+In @fig-spectrum, we illustrate how the level of an analyte measured by a diagnostic test may vary as a function of disease stage. If the study population included only healthy individuals and individuals in the advanced clinical stage, the proposed test threshold would classify all individuals with the condition as T+ (i.e., the test sensitivity would be estimated at 1.0, or 100%). Moreover, most individuals without the condition would be classified as T-, yielding an estimated test specificity of `r round(results1$specificity, 2)`.
+
+By contrast, if the study population included healthy individuals as well as individuals across the full disease spectrum (i.e., subclinical Stages I and II, and clinical mild and advanced stages), many individuals in the subclinical stages and some individuals in the clinical mild stage would be classified as T-. As a result, the estimated test sensitivity would decrease to `r round(results2$sensitivity, 2)`, substantially lower than the perfect sensitivity obtained under the more restricted study design.
+
+```{r fig-spectrum}
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-cap: Distribution of test‑measured analyte levels across a hypothetical population at successive stages of a disease spectrum.
+
+
+# Define a gradient of 5 colors
+stage_colors <- c(
+  "Healthy" = "#1b9e77",        # greenish = healthy
+  "Subclinical Stage I" = "#ffd92f", 
+  "Subclinical Stage II" = "#fdae61", 
+  "Clinical mild" = "#f46d43", 
+  "Clinical advanced" = "#d73027" # red = severe
+)
+stage_fill <- stage_colors  # same for fill
+
+
+#-----------------------------
+# Plot
+#-----------------------------
+ggplot(data, aes(x = value, color = group, fill = group)) +
+  geom_density(
+    aes(y = after_stat(count)),
+    alpha = 0.2,
+    size = 1) +
+  # Threshold line
+  geom_vline(xintercept = threshold, linetype = "dashed", size = 1) +
+  scale_color_manual(values = stage_colors) +
+  scale_fill_manual(values = stage_fill) +
+    # Labels
+  annotate("text",
+           x = threshold,
+           y = 250,
+           label = "Threshold",
+           angle = 90,
+           vjust = -0.5) +
+    labs(
+    x = "Analyte level",
+    y = "Number of individuals",
+    color = "Disease stage",
+    fill = "Disease stage"
+  ) +
+  guides(
+    color = guide_legend(nrow = 2),
+    fill  = guide_legend(nrow = 2)
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom"
+  )
+
+
+```
+
+Another important consideration when designing participant recruitment is **whether individuals are clustered within groups**. This is a common feature of veterinary studies, where a herd, flock, or geographic area is first identified as a primary sampling unit, followed by the sampling and testing of a number (or all) of the animals within that unit. As discussed in subsequent chapters, such sampling schemes must be explicitly accounted for in the statistical analyses. Moreover, we will see that these strategies can be advantageous in certain Bayesian latent class models.
+
+In addition to the recruitment structure, **sample size requirements** are a key aspect of diagnostic test validation studies and will be addressed in detail in a later chapter. Briefly, however, it is important to recall that the primary parameters estimated in these studies—test sensitivity and specificity—are proportions. When estimating a proportion, increasing the denominator leads to greater precision (i.e., a narrower 95% confidence interval). Importantly, the denominators for sensitivity (the number of truly diseased individuals) and specificity (the number of truly non‑diseased individuals) differ. Consequently, sample size calculations often need to ensure adequate precision for the more limiting parameter (e.g., sensitivity), while the other parameter (e.g., specificity) may be estimated with greater precision than strictly required. In situations where estimation of disease prevalence is not an objective, it may also be possible to oversample potentially diseased (or healthy) individuals, provided that the principle of adequate representation across the full disease spectrum is respected.
+
+Finally, some diagnostic tests may be **affected by characteristics of the individuals being tested** (e.g., age, sex, or other host factors). It may therefore be useful to stratify the analysis according to factors hypothesized to influence test accuracy. To support such analyses, these characteristics must be systematically recorded in the study database at the time of sampling. Importantly, their consideration should also be incorporated prospectively into the recruitment strategy, such that individuals with the relevant characteristics are purposively included. Doing so, however, requires recruiting a sufficient number of both potentially healthy and diseased individuals within each stratum defined by these characteristics. Test sensitivity and specificity can then be estimated separately for each specific profile (e.g., juvenile *vs.* adult individuals).
+
+### Tests Under Comparison
+
+The **diagnostic test whose performance is being assessed is referred to as the *index test***. A single study may evaluate the accuracy of one or several index tests. Assessment of a test’s diagnostic performance can be achieved, in theory, by comparing the distribution of index test results with that of a *gold standard* (as in @tbl-2by2). **A** **gold standard test is a diagnostic procedure that provides a perfect classification of the presence or absence of the target condition**. In practice, however, gold standard tests are very rare, invasive, or costly, which is often why a new index test is developed!
+
+When a gold standard is unavailable, several alternative strategies have been used to approximate a reference for evaluating diagnostic test performance. These include the use of *composite reference standards* that combine multiple tests or clinical criteria, as well as approaches such as *discrepant analysis*, in which a third test is applied only to discordant results. While these methods can be practical, they rely on strong assumptions and may introduce bias through misclassification, subjectivity in case definitions, or underrepresentation of individuals across the full disease spectrum.
+
+In contrast, **Bayesian latent class models allow the comparison of two or more imperfect tests** by treating the true disease status as an unobserved (latent) variable and jointly estimating test accuracies from the observed data. These models, which form the central focus of this book, are developed in detail in subsequent chapters. In diagnostic test validation studies involving multiple imperfect tests, one or a small subset of tests typically serve as the index tests (i.e., the tests under investigation), while the remaining tests are used for comparison. Throughout this book, we refer to these latter tests as *reference standard tests*, explicitly acknowledging that they are not gold standards but are instead employed as comparators for evaluating the performance of the index test(s).
+
+Several important considerations must be addressed regarding the tests selected for comparison. First, unless the target condition is known to be stable over time, the tests being compared should be conducted on **samples collected within a relatively short time interval, given the natural history of the disease** (e.g., the same day, week, or month). This helps ensure that any discrepancies observed between test results can be attributed to differences in test accuracy rather than to changes in the disease status of the individuals tested. Similarly, the **performers or readers of each test should be blinded** to individual clinical information and to the results of the other test(s) to prevent assessment bias.
+
+Moreover, in many situations, it may be preferable to **compare tests that target different biological mechanisms to reduce conditional dependence between tests.** The concept of conditional dependence is discussed in greater detail in a subsequent chapter; briefly, it refers to situations in which tests may agree with one another despite being jointly incorrect with respect to an individual’s true disease status. For example, an individual in the early stage of an infectious process may shed only a very small quantity of the pathogenic agent. As a result, both a microbiological culture and an enzyme‑linked immunosorbent assay (ELISA) targeting antigens specific to that agent may fail to classify the individual as diseased because of the low microbial burden.
+
+A related and equally important consideration when selecting tests for comparative evaluation is the **precise definition of the target condition**. For instance, in a study comparing a polymerase chain reaction (PCR) assay with an antibody‑based ELISA, the PCR assay detects pathogen nucleic acids and is therefore indicative of active pathogen shedding, whereas the ELISA measures host immune responses reflecting prior or ongoing exposure. Consequently, the target condition may need to be defined as a specific stage of infection in which individuals both shed detectable amounts of the pathogen and have mounted a measurable antibody response.
+
+In practice, **identifying tests that rely on different mechanisms yet remain suitable for joint evaluation can be challenging**, particularly for very acute or short‑lived disease processes. For example, diseases characterized by brief or intermittent shedding periods may be difficult to detect reliably using PCR, while antibodies may persist for extended periods during convalescence. Under such circumstances, tests based on these distinct analytes may not be appropriate for simultaneous use to evaluate the same target condition.
+
+### Analytical Approach
+
+We previously described how test accuracy can be estimated when a gold standard test is available and used (@tbl-2by2). In the following chapters, we will introduce Bayesian latent class models as an alternative framework for evaluating diagnostic accuracy when two or more imperfect tests are compared. Before applying any statistical method, however, several issues related to data organization and handling must first be addressed.
+
+A common challenge concerns the **treatment of inconclusive test results**. For many diagnostic tests, an initially quantitative measurement (e.g., an optical density, a cycle threshold, or a titre) is ultimately categorized as negative, suspect, or positive. In such situations, decisions must be made regarding how to handle suspect or inconclusive results. A recommended approach is to conduct a primary analysis excluding inconclusive results, while also performing sensitivity analyses in which these results are alternatively classified as negative and then as positive. Presenting results from these alternative analyses allows assessment of the robustness of the conclusions to different plausible assumptions.
+
+In some studies, a substantial number of **missing test results** may be present. Whenever possible, efforts should be made to minimize missingness prospectively through careful study planning, standardized procedures, and rigorous quality control. When missing results are unavoidable, the proportion of missing data and the reasons for their occurrence (e.g., insufficient sample volume, assay failure, or logistical issues) should, at a minimum, be recorded and reported. This information is essential for assessing whether missingness is likely to be random or systematic.
+
+A common and acceptable starting point is to conduct the primary analysis using only individuals with complete test results for the variables of interest. However, this approach implicitly assumes that missingness is unrelated to disease status or test performance, and its impact may be considerable when missing data are non‑negligible. Consequently, when missingness is substantial, alternative analyses should be performed to evaluate the robustness of the results under different assumptions regarding missing test outcomes. Examples include:
+
+-   Treating missing results as negative,
+
+-   Treating missing results as positive,
+
+-   Assigning missing results probabilistically (where justified).
+
+A final consideration before undertaking the statistical analyses concerns the **choice of a cut‑off for interpreting tests that initially yield a quantitative output**. As with other design decisions, good practice is to examine several candidate thresholds or a range of plausible cut‑offs rather than relying on a single value. At a minimum, the rationale for selecting a particular threshold to define test positivity should be clearly stated, and investigators should specify whether this threshold was prespecified or determined in an exploratory manner.
+
+When multiple thresholds are evaluated, the final choice should be guided by criteria that are aligned with the intended use of the test. For example, threshold selection may be informed by analyses that incorporate misclassification costs or, at the very least, by examining predictive values across one or several hypothetical disease prevalences. Such approaches help ensure that the chosen cut‑off reflects the practical consequences of diagnostic errors in the target context of use.
+
+### Reporting Results {#sec-reporting-results}
+
+Guidelines have been developed to promote complete and transparent reporting of diagnostic test validation studies. The *Standards for Reporting Diagnostic Accuracy* (STARD) statement was first introduced to provide general guidance for reporting studies of diagnostic accuracy [@Bossuyt2003]. More recently, the *STARD-BLCM* guidelines were proposed to address the specific requirements of studies that use Bayesian latent class models to estimate diagnostic test accuracy in the absence of a gold standard [@Kostoulas2017]. Together, these documents constitute some of the most comprehensive and authoritative resources for reporting diagnostic accuracy studies.
+
+In this section, we highlight selected reporting elements from these guidelines that are specifically relevant to the reporting of results from diagnostic test validation studies. Although the discussion includes studies using Bayesian latent class models, the focus is broader and emphasizes reporting elements that are common across diagnostic accuracy studies.
+
+A notable feature of diagnostic validation studies is that the **raw results can** (and therefore should) **usually be reported completely within the published article** in a very compact format. For instance, when two imperfect tests are applied to a set of study participants, a simple 2×2 contingency table such as @tbl-2by2b can be used to report the complete set of cross-classified test results. A footnote can provide additional information, for example, on any inconclusive results not included in the table.
+
+|             | Test A+ | Test A- | Total |
+|-------------|---------|---------|-------|
+| **Test B+** | 138     | 10      | 148   |
+| **Test B-** | 1       | 113     | 114   |
+| **Total**   | 139     | 123     | 262   |
+
+: Cross-classified results from two diagnostic tests {#tbl-2by2b}
+
+Presenting the raw results for studies using more complex designs may require additional space and some creativity, but it is usually achievable. For instance, a table such as @tbl-2by2c could be used to present the raw results from a study in which three diagnostic tests were applied to cows from eight different farms (i.e., eight independent populations).
+
+| Farms | PCR+LC+ AB+ | PCR+LC+ AB- | PCR+LC- AB+ | PCR+LC- AB- | PCR-LC+ AB+ | PCR-LC+ AB- | PCR-LC- AB+ | PCR-LC- AB- | Total |
+|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|
+| **1** | 13 | 4 | 9 | 4 | 0 | 0 | 16 | 14 | 60 |
+| **2** | 2 | 0 | 0 | 0 | 0 | 3 | 0 | 60 | 65 |
+| **3** | 4 | 0 | 3 | 0 | 0 | 1 | 3 | 67 | 78 |
+| **4** | 49 | 2 | 25 | 0 | 0 | 2 | 6 | 21 | 105 |
+| **5** | 15 | 4 | 4 | 3 | 0 | 0 | 12 | 7 | 45 |
+| **6** | 35 | 0 | 7 | 0 | 1 | 5 | 4 | 58 | 110 |
+| **7** | 14 | 1 | 11 | 0 | 0 | 0 | 4 | 8 | 38 |
+| **8** | 12 | 0 | 9 | 1 | 1 | 0 | 6 | 39 | 68 |
+| **Total** | 144 | 11 | 68 | 8 | 2 | 11 | 51 | 274 | 569 |
+
+: Cross-classified results from three diagnostic tests—PCR, blood lymphocyte counts (LC), and an ELISA antibody test (AB)—applied across eight farms. {#tbl-2by2c}
+
+Reporting the raw study results facilitates their reuse, for instance in a meta-analysis. Moreover, it increases transparency and reproducibility, as readers can use the raw data to compute estimates of measures of accuracy (i.e., test sensitivity and specificity) and corresponding measures of uncertainty (e.g., 95% CI).
+
+The next key reporting element common to all diagnostic test validation studies is, of course, **point estimates of the sensitivity and specificity** of the test(s) under evaluation. Most importantly, however, **measures of uncertainty around these estimates** should also be reported. These will typically take the form of 95% CI (when a frequentist statistical approach is used) or, as discussed in the following chapters, 95% Bayesian credible intervals (95% BCIs) when a Bayesian analysis is employed.
+
+As mentioned earlier, sensitivity and specificity describe the intrinsic characteristics of a test. They do not provide direct information about its use in determining the status of a given individual, whether in a population with a specific prevalence of the target condition or within a particular diagnostic context. Nevertheless, sensitivity and specificity are key parameters required to compute more directly interpretable measures, such as likelihood ratios, predictive values, and misclassification costs. For this reason, they are almost always presented as primary study results.
+
+An additional important reporting element in diagnostic test validation studies is the presentation of **measures that are interpretable within a specific clinical or public health context**. For example, predictive values may be reported using the prevalence anticipated in the intended target population or, preferably, across a range of prevalences reflecting common use scenarios. Similarly, when multiple test thresholds or alternative testing strategies are evaluated (e.g., different tests or combinations of tests), an analysis of misclassification costs can provide a purpose‑specific framework for comparing competing strategies.
+
+Whenever possible, **uncertainty around these context‑specific measures** should also be reported. However, unlike sensitivity and specificity—which are simple proportions with well‑established confidence‑interval estimators—many derived measures such as likelihood ratios, predictive values, or misclassification cost terms do not have a single, universally accepted closed‑form frequentist confidence‑interval formula. As a result, approaches such as bootstrap confidence intervals or other resampling‑based methods are often used in practice. As discussed in the next chapter, this difficulty does not arise within a Bayesian framework, where posterior credible intervals can be directly obtained for any parameter of interest.
+
+## Pitfalls of Assuming a Gold Standard
+
+As discussed earlier, for many conditions there is no gold standard test, or the available gold standard test is too invasive or too costly to be used in practice. In such cases, a reference standard test is often employed; however, this may lead to some degree of misclassification of the target condition among study participants. Other approaches, such as composite reference standards or discrepant analysis, are also susceptible to misclassification and related biases.
+
+Nevertheless, the scientific literature contains numerous diagnostic test validation studies in which an index test is directly compared to a reference standard test, implicitly assuming that the reference standard provides a perfect classification of disease status. Estimates of index test accuracy are then reported, often accompanied by measures of uncertainty. Importantly, however, these measures typically account only for random error and do not reflect the systematic error arising from misclassification of the target condition. In this section, we examine how such approaches can lead to biased and potentially distorted estimates of diagnostic accuracy.
+
+We begin with a simple example involving a study design aimed solely at **estimating disease prevalence in a population using a reference standard test**. Suppose the reference standard has a sensitivity of 0.80 and a specificity of 0.95. A random sample of 1,000 individuals is selected from the source population and tested, and 88 individuals test positive. Based on these results, the authors report an estimated prevalence of 8.8%, with a 95% CI ranging from 7.0% to 10.6%.
+
+Because the reference test is imperfect, however, this apparent prevalence may differ from the true disease prevalence. When asked to intuitively assess whether the true prevalence is higher or lower than 8.8%, most of our epidemiology students (and many of our colleagues) readily answer that the true prevalence is likely to be higher. This common intuition stems from an oversimplified view of the problem. When prompted for a quick judgment, we tend to focus on the explicit test characteristics provided: a modest sensitivity (0.80) and an excellent specificity (0.95). From this perspective, one may reason that many diseased individuals were misclassified as healthy, leading naturally to the conclusion that the true prevalence must be higher than the observed 8.8%.
+
+In reality, however, the problem is three‑dimensional. As discussed earlier in this chapter, the number of individuals who are misclassified depends not only on test sensitivity and specificity, but also on the underlying prevalence of the target condition in the population (which is potentially quite small in the above problem). Unfortunately, human intuition performs poorly when more than two factors must be considered simultaneously. @tbl-misclPrev illustrates how the observed test results could arise in this sample. To obtain 88 positive test results out of 1,000 individuals, given a sensitivity of 0.80 and a specificity of 0.95, the sample must contain 50 truly diseased individuals; corresponding to a true prevalence of 5% (95 CI: 3.7% to 6.4%). Notably, the apparent prevalence estimate of 8.8% lies entirely outside the confidence interval for the true prevalence. This example illustrates that conventional 95% confidence intervals quantify uncertainty due to random error only, and do not account for systematic error introduced by misclassification of the reference standard.
+
+|           | **D**+ | **D**- | **Total** |
+|:---------:|:------:|:------:|:---------:|
+|  **T**+   |   40   |   48   |    88     |
+|  **T**-   |   10   |  912   |    922    |
+| **Total** |   50   |  950   |   1000    |
+
+: 2×2 contingency table summarizing the results of a reference standard test with a sensitivity of 0.80 and a specificity of 0.95 according to true disease status. {#tbl-misclPrev}
+
+In the example above, the correct answer to a request for an educated guess about the true prevalence would have been: *“Let me grab a pen and paper and give me two minutes before I answer!”*
+
+In @tbl-misclPrev above, the true prevalence was estimated by implicitly “reconstructing” the true disease status of the tested individuals based on the reference test results and its diagnostic characteristics. The same result could have been obtained using closed‑form formulae that link the apparent prevalence (*AP*) to the true prevalence (*P*), which are available in most epidemiology textbooks:
+
+$$
+AP = P \cdot Se + (1-P) \cdot (1-Sp)
+$$ {#eq-ApTOp}
+
+or
+
+$$
+P = \frac{AP+Sp-1}{Se+Sp-1}
+$$ {#eq-pTOap}
+
+Now, let us consider a slightly more complex example. You are evaluating a new index test and have compared it to a reference standard test. The reference test is known to have a sensitivity of 1.00 (100%) and an excellent specificity of 0.95. You are aware that this may not be the best possible approach, but your plan is to assume in your statistical analyses that the reference standard test is perfect. After all, it is very close to being a gold standard.
+
+The night before completing the statistical analyses, you have a prophetic dream that reveals to you the true disease status of the 1,000 individuals tested with the index test in your study. When you wake up, you promptly sketch the 2×2 table before forgetting the details of your revelation:
+
+|           | **D**+ | **D**- | **Total** |
+|:---------:|:------:|:------:|:---------:|
+|  **T**+   |   49   |   38   |    87     |
+|  **T**-   |   1    |  912   |    913    |
+| **Total** |   50   |  950   |   1000    |
+
+: 2×2 contingency table summarizing the results of an index test according to the true disease status revealed during a prophetic dream. {#tbl-2by2Prophecy}
+
+You therefore know that the index test has a sensitivity of 0.98 (49/50) and a specificity of 0.96 (912/950). You think to yourself: *“OMG, I am so lucky! First the prophetic dream, and now a test with awesome performance!”*
+
+The good news does not stop there: when designing the study, you chose a reference standard test that is almost perfect, so the comparison should be straightforward. Thus, after compiling the cross‑classification of the two tests, you proceed to compute the index test accuracy and prepare to write an outstanding paper describing how impressive this new test is. You promptly sketch the following 2×2 table:
+
+|            | **Reference**+ | **Reference**- | **Total** |
+|:----------:|:--------------:|:--------------:|:---------:|
+| **Index**+ |       67       |       19       |    87     |
+| **Index**- |       30       |      884       |    913    |
+| **Total**  |       98       |      903       |   1000    |
+
+: 2×2 contingency table summarizing the results of an index test according to a reference standard test. {#tbl-2by2Realtysucks}
+
+The 2×2 table comparing the index test with the reference standard test (@tbl-2by2Realtysucks) looks very different from the one comparing the index test with the true disease status (@tbl-2by2Prophecy). The estimated sensitivity of the index test is now 0.68 (67/98), while its specificity is 0.98 (884/903). However, you know from your prophetic dream that the true sensitivity and specificity are 0.98 and 0.96, respectively. The estimated sensitivity of 0.68 is not even close to the true value of 0.98.
+
+What happened?
+
+In reality, the reference standard test misclassified 48 (5%) of the 950 truly healthy individuals because of its imperfect specificity (they were classified as T+). Many of these individuals had a negative result on the index test, creating discordant test results. Because you assumed that the reference standard test was perfect, all discrepancies between the two tests were attributed to failures of the index test.
+
+This example illustrates how severely diagnostic accuracy estimates can be distorted when an imperfect reference standard test is used for comparison but is assumed to provide a perfect classification of participants’ disease status. Importantly, this bias can be substantial even when the reference standard is very close to being perfect, as illustrated in this example. As we will see in subsequent chapters, this issue can be directly addressed using Bayesian latent class models, which explicitly acknowledge the imperfect nature of the reference standard test and allow diagnostic accuracy to be estimated without assuming perfect disease classification.

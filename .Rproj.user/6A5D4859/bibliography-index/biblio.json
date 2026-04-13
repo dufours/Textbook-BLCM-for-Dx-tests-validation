@@ -27,6 +27,309 @@
             "title": "Literate programming",
             "type": "article-journal",
             "volume": "27"
+        },
+        {
+            "DOI": "10.1016/j.prevetmed.2025.106723",
+            "URL": "http://dx.doi.org/10.1016/j.prevetmed.2025.106723",
+            "author": [
+                {
+                    "family": "Lima-Campêlo",
+                    "given": "Vitória R."
+                },
+                {
+                    "family": "Fonseca",
+                    "given": "Mariana"
+                },
+                {
+                    "family": "Morin",
+                    "given": "Marie-Pascale"
+                },
+                {
+                    "family": "Farison",
+                    "given": "Faustin"
+                },
+                {
+                    "family": "Nankam Nguekap",
+                    "given": "William L."
+                },
+                {
+                    "family": "Solano-Suarez",
+                    "given": "Karol G."
+                },
+                {
+                    "family": "Barkema",
+                    "given": "Herman W."
+                },
+                {
+                    "family": "Shaukat",
+                    "given": "Waseem"
+                },
+                {
+                    "family": "Renaud",
+                    "given": "David L."
+                },
+                {
+                    "family": "Kelton",
+                    "given": "David F."
+                },
+                {
+                    "family": "Fecteau",
+                    "given": "Gilles"
+                },
+                {
+                    "family": "Roy",
+                    "given": "Jean-Philippe"
+                },
+                {
+                    "family": "Donoso",
+                    "given": "Pablo Valdés"
+                },
+                {
+                    "family": "Manac’h",
+                    "given": "Solène Le"
+                },
+                {
+                    "family": "Arango-Sabogal",
+                    "given": "Juan C."
+                },
+                {
+                    "family": "Paradis",
+                    "given": "Marie-Ève"
+                },
+                {
+                    "family": "Beauregard",
+                    "given": "Nancy"
+                },
+                {
+                    "family": "Racicot",
+                    "given": "Manon"
+                },
+                {
+                    "family": "Aenishaenslin",
+                    "given": "Cécile"
+                },
+                {
+                    "family": "Dufour",
+                    "given": "Simon"
+                }
+            ],
+            "container-title": "Preventive Veterinary Medicine",
+            "id": "Lima-Campêlo2026",
+            "issued": {
+                "date-parts": [
+                    [
+                        2026,
+                        1
+                    ]
+                ]
+            },
+            "language": "en",
+            "page": "106723",
+            "title": "Automating classification of veterinary biosecurity recommendations using machine learning",
+            "type": "article-journal",
+            "volume": "246"
+        },
+        {
+            "DOI": "10.7326/0003-4819-138-1-200301070-00012-w1",
+            "URL": "http://dx.doi.org/10.7326/0003-4819-138-1-200301070-00012-w1",
+            "author": [
+                {
+                    "family": "Bossuyt",
+                    "given": "Patrick M."
+                },
+                {
+                    "family": "Reitsma",
+                    "given": "Johannes B."
+                },
+                {
+                    "family": "Bruns",
+                    "given": "David E."
+                },
+                {
+                    "family": "Gatsonis",
+                    "given": "Constantine A."
+                },
+                {
+                    "family": "Glasziou",
+                    "given": "Paul P."
+                },
+                {
+                    "family": "Irwig",
+                    "given": "Les M."
+                },
+                {
+                    "family": "Moher",
+                    "given": "David"
+                },
+                {
+                    "family": "Rennie",
+                    "given": "Drummond"
+                },
+                {
+                    "dropping-particle": "de",
+                    "family": "Vet",
+                    "given": "Henrica C. W."
+                },
+                {
+                    "family": "Lijmer",
+                    "given": "Jeroen G."
+                }
+            ],
+            "container-title": "Annals of Internal Medicine",
+            "id": "Bossuyt2003",
+            "issue": "1",
+            "issued": {
+                "date-parts": [
+                    [
+                        2003,
+                        1,
+                        7
+                    ]
+                ]
+            },
+            "language": "en",
+            "page": "W1-12",
+            "title": "The STARD Statement for Reporting Studies of Diagnostic Accuracy: Explanation and Elaboration",
+            "title-short": "The STARD Statement for Reporting Studies of Diagnostic Accuracy",
+            "type": "article-journal",
+            "volume": "138"
+        },
+        {
+            "DOI": "10.1016/j.prevetmed.2017.01.006",
+            "URL": "http://dx.doi.org/10.1016/j.prevetmed.2017.01.006",
+            "author": [
+                {
+                    "family": "Kostoulas",
+                    "given": "Polychronis"
+                },
+                {
+                    "family": "Nielsen",
+                    "given": "Søren S."
+                },
+                {
+                    "family": "Branscum",
+                    "given": "Adam J."
+                },
+                {
+                    "family": "Johnson",
+                    "given": "Wesley O."
+                },
+                {
+                    "family": "Dendukuri",
+                    "given": "Nandini"
+                },
+                {
+                    "family": "Dhand",
+                    "given": "Navneet K."
+                },
+                {
+                    "family": "Toft",
+                    "given": "Nils"
+                },
+                {
+                    "family": "Gardner",
+                    "given": "Ian A."
+                }
+            ],
+            "container-title": "Preventive Veterinary Medicine",
+            "id": "Kostoulas2017",
+            "issued": {
+                "date-parts": [
+                    [
+                        2017,
+                        3
+                    ]
+                ]
+            },
+            "language": "en",
+            "page": "37-47",
+            "title": "STARD-BLCM: Standards for the Reporting of Diagnostic accuracy studies that use Bayesian Latent Class Models",
+            "title-short": "STARD-BLCM",
+            "type": "article-journal",
+            "volume": "138"
+        },
+        {
+            "DOI": "10.3168/jds.2025-27485",
+            "URL": "http://dx.doi.org/10.3168/jds.2025-27485",
+            "author": [
+                {
+                    "family": "Solano-Suarez",
+                    "given": "K. G."
+                },
+                {
+                    "family": "Arango-Sabogal",
+                    "given": "J. C."
+                },
+                {
+                    "family": "Roy",
+                    "given": "J. P."
+                },
+                {
+                    "family": "Molgat",
+                    "given": "E."
+                },
+                {
+                    "family": "Bédard",
+                    "given": "C."
+                },
+                {
+                    "family": "Gagnon",
+                    "given": "C. A."
+                },
+                {
+                    "family": "Buczinski",
+                    "given": "S."
+                },
+                {
+                    "family": "Dufour",
+                    "given": "S."
+                }
+            ],
+            "container-title": "Journal of Dairy Science",
+            "id": "Solano-Suarez2026",
+            "issue": "3",
+            "issued": {
+                "date-parts": [
+                    [
+                        2026,
+                        3
+                    ]
+                ]
+            },
+            "language": "en",
+            "page": "2859-2875",
+            "title": "Bayesian diagnostic accuracy estimation of milk enzyme-linked immunosorbent assay, blood polymerase chain reaction, and peripheral blood lymphocyte count tests to determine bovine leukosis virus status in dairy cows",
+            "type": "article-journal",
+            "volume": "109"
+        },
+        {
+            "DOI": "10.1109/tpami.1984.4767596",
+            "URL": "http://dx.doi.org/10.1109/tpami.1984.4767596",
+            "author": [
+                {
+                    "family": "Geman",
+                    "given": "Stuart"
+                },
+                {
+                    "family": "Geman",
+                    "given": "Donald"
+                }
+            ],
+            "container-title": "IEEE Transactions on Pattern Analysis and Machine Intelligence",
+            "id": "Geman1984",
+            "issue": "6",
+            "issued": {
+                "date-parts": [
+                    [
+                        1984,
+                        11
+                    ]
+                ]
+            },
+            "page": "721-741",
+            "title": "Stochastic relaxation, gibbs distributions, and the bayesian restoration of images",
+            "type": "article-journal",
+            "volume": "PAMI-6"
         }
     ],
     "project_biblios": [
