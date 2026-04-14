@@ -45,7 +45,7 @@ PPV = P(D^+ \mid T^+) = \frac{P(T^+ \mid D^+) \cdot P (D^+)}{P(T^+)} = \frac{Se 
 
 Although Bayes’ theorem is a simple law of probability, Bayesian statistics goes well beyond this. In a broader sense, Bayesian statistics is a framework for statistical inference in which **prior knowledge and observed data are formally combined to produce updated knowledge**.
 
-This parallel can be made explicit by reinterpreting the terms of Bayes’ theorem. In a Bayesian context, the quantity of interest is typically an unknown parameter, denoted *θ* (for example, a disease prevalence, a test sensitivity, or a regression coefficient). Bayes’ theorem can then be written as:
+This parallel can be made explicit by reinterpreting the terms of Bayes’ theorem. In a Bayesian context, the quantity of interest is typically an unknown parameter, denoted $\theta$ (for example, a disease prevalence, a test sensitivity, or a regression coefficient). Bayes’ theorem can then be written as:
 
 $$
 P(\theta \mid data) = \frac{P(data \mid \theta) \cdot P(\theta)}{P(data)}
@@ -53,13 +53,13 @@ $$ {#eq-Bayesinferences}
 
 Each term of this expression has a clear **inferential interpretation**:
 
--   *P(θ)* represents existing knowledge or beliefs about the parameter before observing the data. We will later see that this knowledge is not expressed as a single estimate, but rather as a *distribution* of plausible values, referred to as the **prior distribution**.
+-   $P(\theta)$ represents existing knowledge or beliefs about the parameter before observing the data. We will later see that this knowledge is not expressed as a single estimate, but rather as a *distribution* of plausible values, referred to as the **prior distribution**.
 
--   *P(data \| θ)* is the **likelihood**, which quantifies how compatible the observed data are with different values of the parameter.
+-   $P(data|\theta)$ is the **likelihood**, which quantifies how compatible the observed data are with different values of the parameter.
 
--   *P(θ \| data)* is the **posterior distribution**, which represents updated knowledge about the parameter after combining the prior information with the data.
+-   $P(\theta | data)$ is the **posterior distribution**, which represents updated knowledge about the parameter after combining the prior information with the data.
 
--   *P(data)* is a normalizing term that is required mathematically but is not of direct interest for epidemiological interpretation and **can generally be ignored** in practice.
+-   $P(data)$ is a normalizing term that is required mathematically but is not of direct interest for epidemiological interpretation and **can generally be ignored** in practice.
 
 Thus, Bayesian inference can be viewed as a formal learning process: **prior information is updated by the data through Bayes’ theorem to yield posterior knowledge**.
 
@@ -108,7 +108,7 @@ df <- data.frame(
 # -----------------------------
 # Plot
 # -----------------------------
-ggplot(df, aes(x, y)) +
+p <- ggplot(df, aes(x, y)) +
   geom_text(
     aes(label = label),
     size = 4
@@ -135,6 +135,8 @@ ggplot(df, aes(x, y)) +
   theme(
     plot.margin = margin(20, 20, 20, 20)
   )
+
+print(p)
 ```
 
 Despite these fundamentally different approaches to inferences, there are nevertheless many similarities between frequentists and Bayesian inferences.
@@ -376,7 +378,7 @@ Figure @fig-PriorPost illustrates how the prior distribution for disease prevale
 #| message: false
 #| warning: false
 #| results: hide
-#| fig-cap: Density curves of the disease‑prevalence prior distribution (dashed red line) and posterior distribution (solid black line).
+#| fig-cap: Density curves of the disease‑prevalence prior (dashed red line) and posterior (solid black line), together with the point estimate based on the data alone (dashed blue line).
 
 #Creating a dataset
 datalist <- list(T=15, n=30)
@@ -445,9 +447,12 @@ curve(dbeta(x,
       add=TRUE)                
 
 
+# Add vertical blue dashed line at x = 0.50
+abline(v = 0.50, col = "blue", lty = 2)
+
 ```
 
-This prior distribution can be summarized by its **median**, equal to `r scales::percent(med)` and by its 95% BCI ranging from `r scales::percent(low)` to `r scales::percent(hi)`.
+This posterior distribution can be summarized by its **median**, equal to `r scales::percent(med)` and by its 95% BCI ranging from `r scales::percent(low)` to `r scales::percent(hi)`.
 
 As anticipated, the posterior distribution lies **between** the prior distribution—characterized by a mode of 30%—and the value of *P* that would be estimated using the observed data alone (50%, corresponding to 15 diseased individuals out of 30). This illustrates how Bayesian inference combines prior information and data to yield an updated estimate of the disease prevalence.
 
